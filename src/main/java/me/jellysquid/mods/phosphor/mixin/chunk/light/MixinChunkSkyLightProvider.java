@@ -85,6 +85,10 @@ public abstract class MixinChunkSkyLightProvider extends ChunkLightProvider<SkyL
             return currentLevel;
         }
 
+        if (toId == fromId) {
+            return 15; // MC-196542: The provided positions should always be adjacent
+        }
+
         int toX = BlockPos.unpackLongX(toId);
         int toY = BlockPos.unpackLongY(toId);
         int toZ = BlockPos.unpackLongZ(toId);
@@ -107,16 +111,15 @@ public abstract class MixinChunkSkyLightProvider extends ChunkLightProvider<SkyL
         boolean airPropagation = toState == AIR_BLOCK && fromState == AIR_BLOCK;
         boolean verticalOnly = fromX == toX && fromZ == toZ;
 
-        // The direction the light update is propagating
-        Direction dir = DirectionHelper.getVecDirection(toX - fromX, toY - fromY, toZ - fromZ);
-
-        if (dir == null) {
-            return 15; // MC-196542: The provided positions should always be adjacent
-        }
-
         // Shape comparison checks are only meaningful if the blocks involved have non-empty shapes
         // If we're comparing between air blocks, this is meaningless
         if (!airPropagation) {
+            // The direction the light update is propagating
+            Direction dir = DirectionHelper.getVecDirection(toX - fromX, toY - fromY, toZ - fromZ);
+            if (dir == null) {
+                return 15;
+            }
+
             VoxelShape toShape = this.getOpaqueShape(toState, toX, toY, toZ, dir.getOpposite());
 
             if (toShape != VoxelShapes.fullCube()) {

@@ -72,6 +72,10 @@ public abstract class MixinChunkBlockLightProvider extends ChunkLightProvider<Bl
             return currentLevel;
         }
 
+        if (toId == fromId) {
+            return 15;
+        }
+
         int toX = BlockPos.unpackLongX(toId);
         int toY = BlockPos.unpackLongY(toId);
         int toZ = BlockPos.unpackLongZ(toId);
@@ -80,25 +84,24 @@ public abstract class MixinChunkBlockLightProvider extends ChunkLightProvider<Bl
         int fromY = BlockPos.unpackLongY(fromId);
         int fromZ = BlockPos.unpackLongZ(fromId);
 
+        BlockState toState = this.getBlockStateForLighting(toX, toY, toZ);
+
+        if (toState == null) {
+            return 15;
+        }
+
+        int newLevel = this.getSubtractedLight(toState, toX, toY, toZ);
+
+        if (newLevel >= 15) {
+            return 15;
+        }
+
+        if (fromState == null) {
+            fromState = this.getBlockStateForLighting(fromX, fromY, fromZ);
+        }
+
         Direction dir = DirectionHelper.getVecDirection(toX - fromX, toY - fromY, toZ - fromZ);
-
         if (dir != null) {
-            BlockState toState = this.getBlockStateForLighting(toX, toY, toZ);
-
-            if (toState == null) {
-                return 15;
-            }
-
-            int newLevel = this.getSubtractedLight(toState, toX, toY, toZ);
-
-            if (newLevel >= 15) {
-                return 15;
-            }
-
-            if (fromState == null) {
-                fromState = this.getBlockStateForLighting(fromX, fromY, fromZ);
-            }
-
             VoxelShape aShape = this.getOpaqueShape(fromState, fromX, fromY, fromZ, dir);
             VoxelShape bShape = this.getOpaqueShape(toState, toX, toY, toZ, dir.getOpposite());
 
